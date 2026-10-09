@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en-CA" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Summit — Reach for the Top Practice</title>
+    <meta
+      name="description"
+      content="Practise for Reach for the Top with 1,400+ original questions. Questions are read word by word: press Space to buzz, type your answer, and track how early you know it."
+    />
+    <meta name="theme-color" content="#0c0c0e" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap"
+    />
+    <link rel="stylesheet" href="assets/css/main.css" />
+
+    <script>
+      // Apply the saved theme before first paint to avoid a flash.
+      (function () {
+        try {
+          var saved = JSON.parse(localStorage.getItem("summit:v1") || "{}");
+          var pref = (saved.settings && saved.settings.theme) || "system";
+          var dark = pref === "dark" || (pref === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#app">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="#/" aria-label="Summit home">
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M3 26 13.5 8.5 19 17.6 22 12.8 29 26Z" fill="currentColor" />
+            <path d="M13.5 8.5 16.4 13.3 14.6 12.5 12.6 14Z" fill="var(--bg)" opacity=".9" />
+          </svg>
+          <span class="brand-name">Summit</span>
+        </a>
+
+        <nav class="main-nav" aria-label="Primary">
+          <a href="#/practice" data-nav="practice">Practise</a>
+          <a href="#/bank" data-nav="bank"><span class="hide-sm">Question </span>Bank</a>
+          <a href="#/stats" data-nav="stats">Stats</a>
+        </nav>
+
+        <div class="header-actions">
+          <button class="icon-btn" type="button" data-action="toggle-theme" aria-label="Toggle colour theme"></button>
+          <button class="icon-btn" type="button" data-action="open-settings" aria-label="Settings"></button>
+        </div>
+      </div>
+    </header>
+
+    <main id="app" tabindex="-1"></main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <div class="footer-brand">
+          <span class="brand-name">Summit</span>
+          <span class="muted">A practice tool for Reach for the Top players and coaches.</span>
+        </div>
+        <p class="footer-note muted">
+          All questions are original. Summit is an independent project and is not affiliated with or endorsed by Reach
+          for the Top.
+        </p>
+      </div>
+    </footer>
+
+    <dialog id="settings-dialog" class="dialog" aria-labelledby="settings-title"></dialog>
+
+    <noscript>
+      <div class="container noscript">Summit needs JavaScript to run the buzzer and question reader.</div>
+    </noscript>
+
+    <script type="module" src="assets/js/app.js"></script>
+  </body>
+</html>

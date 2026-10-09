@@ -1,0 +1,15 @@
+{
+  "name": "summit-reach-practice",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A Reach for the Top practice site with a 1,400+ question bank, word-by-word reading and a Space-bar buzzer.",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve -l 8080 .",
+    "test": "node --test tools/grader.test.mjs && node tools/validate.mjs",
+    "validate": "node tools/validate.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

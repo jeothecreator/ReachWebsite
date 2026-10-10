@@ -10,6 +10,24 @@
     />
     <meta name="theme-color" content="#0c0c0e" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Summit" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Summit" />
+    <meta property="og:title" content="Summit — Reach for the Top practice" />
+    <meta
+      property="og:description"
+      content="Thousands of original questions read word by word or aloud. Press Space to buzz, play a daily challenge, or run a team match."
+    />
+    <meta property="og:url" content="https://jeothecreator.github.io/ReachWebsite/" />
+    <meta property="og:image" content="https://jeothecreator.github.io/ReachWebsite/assets/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -46,6 +64,7 @@
 
         <nav class="main-nav" aria-label="Primary">
           <a href="#/practice" data-nav="practice">Practise</a>
+          <a href="#/daily" data-nav="daily">Daily</a>
           <a href="#/bank" data-nav="bank"><span class="hide-sm">Question </span>Bank</a>
           <a href="#/stats" data-nav="stats">Stats</a>
         </nav>
@@ -65,6 +84,7 @@
           <span class="brand-name">Summit</span>
           <span class="muted">A practice tool for Reach for the Top players and coaches.</span>
         </div>
+        <button class="link-btn footer-link hide-touch" type="button" data-action="open-shortcuts">Keyboard shortcuts <kbd>?</kbd></button>
         <p class="footer-note muted">
           All questions are original. Summit is an independent project and is not affiliated with or endorsed by Reach
           for the Top.
@@ -73,6 +93,8 @@
     </footer>
 
     <dialog id="settings-dialog" class="dialog" aria-labelledby="settings-title"></dialog>
+    <dialog id="shortcuts-dialog" class="dialog dialog-sm" aria-labelledby="shortcuts-title"></dialog>
+    <dialog id="packet-dialog" class="dialog" aria-labelledby="packet-title"></dialog>
 
     <noscript>
       <div class="container noscript">Summit needs JavaScript to run the buzzer and question reader.</div>

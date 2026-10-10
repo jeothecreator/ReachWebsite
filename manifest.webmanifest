@@ -1,0 +1,17 @@
+{
+  "name": "Summit — Reach for the Top practice",
+  "short_name": "Summit",
+  "description": "Practise for Reach for the Top: thousands of original questions, a Space-bar buzzer, a moderator voice and a daily challenge.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0c0c0e",
+  "theme_color": "#0c0c0e",
+  "lang": "en-CA",
+  "categories": ["education", "games"],
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

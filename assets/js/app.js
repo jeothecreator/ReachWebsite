@@ -2,18 +2,21 @@
 
 import { store } from "./store.js";
 import { icons } from "./icons.js";
-import { $, $$ } from "./dom.js";
+import { $, $$, isTyping } from "./dom.js";
 import { mountHome } from "./views/home.js";
 import { mountSetup } from "./views/setup.js";
 import { mountPlay } from "./views/play.js";
 import { mountResults } from "./views/results.js";
 import { mountBank } from "./views/bank.js";
 import { mountStats } from "./views/stats.js";
+import { mountDaily } from "./views/daily.js";
 import { openSettings } from "./views/settings.js";
+import { openShortcuts } from "./views/shortcuts.js";
 
 const ROUTES = {
   "": { mount: mountHome, title: "Reach for the Top Practice" },
   practice: { mount: mountSetup, title: "Practise", nav: "practice" },
+  daily: { mount: mountDaily, title: "Daily Challenge", nav: "daily" },
   play: { mount: mountPlay, title: "Playing", nav: "practice" },
   results: { mount: mountResults, title: "Results", nav: "practice" },
   bank: { mount: mountBank, title: "Question Bank", nav: "bank" },
@@ -38,6 +41,7 @@ function render() {
   unmount?.();
   unmount = null;
   app.innerHTML = "";
+  document.querySelectorAll(".confetti").forEach((c) => c.remove());
   document.body.dataset.route = name || "home";
   document.title = `${route.title} · Summit`;
   $$(".main-nav a").forEach((a) => a.classList.toggle("is-active", a.dataset.nav === route.nav));
@@ -80,6 +84,33 @@ $('[data-action="toggle-theme"]').addEventListener("click", () => {
 const settingsBtn = $('[data-action="open-settings"]');
 settingsBtn.innerHTML = icons.settings;
 settingsBtn.addEventListener("click", openSettings);
+
+// "?" shows the keyboard shortcuts anywhere outside a text field.
+document.addEventListener("keydown", (event) => {
+  if (event.key === "?" && !isTyping(event) && !document.querySelector("dialog[open]")) {
+    event.preventDefault();
+    openShortcuts();
+  }
+});
+$('[data-action="open-shortcuts"]')?.addEventListener("click", openShortcuts);
+
+// Offline support and installability (only on a real origin, not file://).
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("sw.js")
+      .then(() => navigator.serviceWorker.ready)
+      .then((registration) => {
+        // Hand over everything this page loaded so the whole app works offline.
+        const urls = performance
+          .getEntriesByType("resource")
+          .map((entry) => entry.name)
+          .filter((url) => url.startsWith(location.origin) || /fonts\.(googleapis|gstatic)\.com/.test(url));
+        registration.active?.postMessage({ type: "precache", urls });
+      })
+      .catch(() => {});
+  });
+}
 
 applyTheme();
 window.addEventListener("hashchange", render);

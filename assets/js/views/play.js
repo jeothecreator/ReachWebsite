@@ -1,18 +1,33 @@
-// The game screen: Snappers and Who Am I? share the toss-up engine; Lightning Round has its own.
+// The game screen: Snappers and Who Am I? share the toss-up engine; Lightning Round and
+// the Buzzer Room have their own controllers.
 
-import { esc, isTyping } from "../dom.js";
+import { esc } from "../dom.js";
 import { icons } from "../icons.js";
-import { store, msPerWord } from "../store.js";
+import { msPerWord } from "../store.js";
 import { sound } from "../sound.js";
+import { speechSupported } from "../speech.js";
 import { isCorrect, answerHTML } from "../grader.js";
-import { topicById, DIFFICULTIES } from "../bank.js";
 import { Reader, wordsHTML, wordCount } from "../reader.js";
 import { Countdown } from "../countdown.js";
 import { OPPONENTS, planOpponent, reboundChance } from "../opponent.js";
-import { MODE_NAMES, takePendingSession, clearPendingSession, saveSession } from "../session.js";
+import { MODE_NAMES, takePendingSession, clearPendingSession } from "../session.js";
+import {
+  CLUE_VALUES,
+  SNAPPER_VALUE,
+  GameBase,
+  tagsHTML,
+  acceptHTML,
+  pauseLayerHTML,
+  timerHTML,
+  refs,
+  updateTimer,
+  bump,
+  haptic,
+  makeItem,
+  recordProgress,
+} from "./game-common.js";
+import { RoomGame } from "./room.js";
 
-const CLUE_VALUES = [40, 30, 20, 10];
-const SNAPPER_VALUE = 10;
 const LIGHTNING_VALUE = 10;
 
 export function mountPlay(root) {
@@ -22,178 +37,10 @@ export function mountPlay(root) {
     return;
   }
   clearPendingSession();
-  const Game = pending.config.mode === "lightning" ? LightningGame : TossupGame;
+  const Game = { lightning: LightningGame, room: RoomGame }[pending.config.mode] ?? TossupGame;
   const game = new Game(root, pending);
   game.start();
   return () => game.destroy();
-}
-
-/* ------------------------------------------------------------------ */
-/* Shared pieces                                                       */
-/* ------------------------------------------------------------------ */
-
-const diffName = (d) => DIFFICULTIES.find((x) => x.id === d)?.name ?? "";
-
-function tagsHTML(q) {
-  return `
-    <div class="q-tags">
-      <span class="tag">${esc(topicById[q.topic]?.name ?? q.topic)}</span>
-      <span class="tag tag-diff" data-diff="${q.diff}">${diffName(q.diff)}</span>
-    </div>`;
-}
-
-function acceptHTML(q) {
-  if (!q.alts?.length) return "";
-  return `<p class="accept"><span class="label">Also accept</span> ${q.alts.map(answerHTML).join(", ")}</p>`;
-}
-
-function pauseLayerHTML() {
-  return `
-    <div class="pause-layer" data-ref="pause" hidden>
-      <div class="pause-panel" role="dialog" aria-modal="true" aria-labelledby="pause-title">
-        <p class="eyebrow">Paused</p>
-        <h2 id="pause-title" class="pause-title">Take a breath.</h2>
-        <div class="pause-actions">
-          <button class="btn btn-primary" data-action="resume">${icons.play}<span>Resume</span><kbd>P</kbd></button>
-          <button class="btn btn-ghost" data-action="quit">End session</button>
-        </div>
-      </div>
-    </div>`;
-}
-
-function timerHTML(label) {
-  return `
-    <div class="timer" role="timer">
-      <div class="timer-meta"><span>${label}</span><span class="timer-secs" data-ref="timerSecs"></span></div>
-      <div class="timer-track"><div class="timer-fill" data-ref="timerFill"></div></div>
-    </div>`;
-}
-
-/** Collect every [data-ref] element under root into an object. */
-function refs(root) {
-  const out = {};
-  root.querySelectorAll("[data-ref]").forEach((el) => (out[el.dataset.ref] = el));
-  return out;
-}
-
-function updateTimer(r, remaining, total) {
-  if (!r.timerFill) return;
-  r.timerFill.style.transform = `scaleX(${Math.max(0, remaining / total)})`;
-  r.timerSecs.textContent = `${Math.ceil(remaining)}s`;
-  r.timerFill.classList.toggle("is-low", remaining <= Math.min(3, total * 0.35));
-}
-
-function bump(el) {
-  if (!el) return;
-  el.classList.remove("bump");
-  void el.offsetWidth; // restart the animation
-  el.classList.add("bump");
-}
-
-/** Base class: timers, keyboard wiring, pause and teardown. */
-class GameBase {
-  constructor(root, { config, questions }) {
-    this.root = root;
-    this.config = config;
-    this.questions = questions;
-    this.settings = store.settings;
-    this.items = [];
-    this.score = 0;
-    this.state = "idle";
-    this.saved = false;
-    this.timeouts = new Set();
-    this.onKeyDown = this.onKeyDown.bind(this);
-    this.onVisibility = () => document.hidden && this.pause();
-    this.onPageHide = () => this.persist();
-    this.onClick = this.onClick.bind(this);
-  }
-
-  later(fn, ms) {
-    const id = setTimeout(() => {
-      this.timeouts.delete(id);
-      fn();
-    }, ms);
-    this.timeouts.add(id);
-  }
-
-  clearLater() {
-    this.timeouts.forEach(clearTimeout);
-    this.timeouts.clear();
-  }
-
-  bind() {
-    document.addEventListener("keydown", this.onKeyDown);
-    document.addEventListener("visibilitychange", this.onVisibility);
-    window.addEventListener("pagehide", this.onPageHide);
-    this.root.addEventListener("click", this.onClick);
-  }
-
-  setState(state) {
-    this.state = state;
-    this.r.card.dataset.state = state;
-  }
-
-  onClick(event) {
-    const btn = event.target.closest("[data-action]");
-    if (!btn || !this.root.contains(btn)) return;
-    if (event.detail > 0) btn.blur(); // mouse clicks shouldn't leave focus where Space would re-trigger it
-    sound.unlock();
-    this.action(btn.dataset.action, btn);
-  }
-
-  onKeyDown(event) {
-    if (event.metaKey || event.ctrlKey || event.altKey) return;
-    if (document.querySelector("dialog[open]")) return;
-    if (event.key === "Escape") {
-      event.preventDefault();
-      this.state === "paused" ? this.resume() : this.pause();
-      return;
-    }
-    if (isTyping(event)) return;
-    sound.unlock();
-    this.key(event);
-  }
-
-  showPause(show) {
-    this.r.pause.hidden = !show;
-    this.root.querySelector(".play").classList.toggle("is-paused", show);
-    if (show) this.r.pause.querySelector("[data-action=resume]").focus();
-  }
-
-  /** Save whatever has been played so far (once). */
-  persist() {
-    if (this.saved || !this.items.length) return null;
-    this.saved = true;
-    return saveSession({
-      config: this.config,
-      items: this.items,
-      score: this.score,
-      oppScore: this.oppScore ?? null,
-      duration: this.config.mode === "lightning" ? this.config.duration : null,
-    });
-  }
-
-  finish() {
-    this.teardownTimers();
-    const record = this.persist();
-    location.hash = record ? `#/results/${record.id}` : "#/practice";
-  }
-
-  destroy() {
-    this.teardownTimers();
-    this.persist();
-    document.removeEventListener("keydown", this.onKeyDown);
-    document.removeEventListener("visibilitychange", this.onVisibility);
-    window.removeEventListener("pagehide", this.onPageHide);
-    this.root.removeEventListener("click", this.onClick);
-  }
-
-  teardownTimers() {
-    this.clearLater();
-    this.reader?.pause();
-    this.countdown?.stop();
-    this.clock?.stop();
-  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -284,6 +131,7 @@ class TossupGame extends GameBase {
     this.reader = new Reader(this.r.text, {
       msPerWord: msPerWord(this.settings.speed),
       breaks,
+      voice: this.settings.voice && speechSupported,
       onWord: (i, total) => this.onWord(i, total),
       onDone: () => this.onReadDone(),
     });
@@ -378,6 +226,7 @@ class TossupGame extends GameBase {
   buzz() {
     if (!(this.state === "reading" || this.state === "window") || this.cur.playerLocked) return;
     sound.buzz();
+    haptic();
     this.reader.pause();
     this.countdown?.stop();
 
@@ -544,12 +393,12 @@ class TossupGame extends GameBase {
     this.cur.outcome = outcome;
     this.r.readFill.style.transform = "scaleX(1)";
 
-    const item = { q: this.q.id, o: outcome, p: this.cur.points };
+    const item = makeItem(this.q, outcome, this.cur.points);
     if (this.cur.buzzAt !== null) item.b = Math.round(this.cur.buzzAt * 1000) / 1000;
     if (this.cur.response) item.r = this.cur.response.slice(0, 80);
     if (this.cur.oppPoints) item.op = this.cur.oppPoints;
     this.items.push(item);
-    store.recordAttempt(this.q.id, outcome === "c");
+    recordProgress(this.q, outcome === "c");
 
     this.r.sessionFill.style.transform = `scaleX(${(this.index + 1) / this.questions.length})`;
     this.setState("result");
@@ -618,13 +467,13 @@ class TossupGame extends GameBase {
         delete item.op;
         cur.rebound = false;
       }
-      store.amendAttempt(this.q.id, true);
+      recordProgress(this.q, true, true);
     } else if (item.o === "c") {
       item.o = "w";
       cur.outcome = "w";
       this.score -= cur.points;
       cur.points = item.p = 0;
-      store.amendAttempt(this.q.id, false);
+      recordProgress(this.q, false, true);
     }
     this.updateScores("you", "opp");
     this.renderResult();
@@ -870,10 +719,10 @@ class LightningGame extends GameBase {
 
   record(outcome, response = "") {
     const q = this.q;
-    const item = { q: q.id, o: outcome, p: outcome === "c" ? LIGHTNING_VALUE : 0 };
+    const item = makeItem(q, outcome, outcome === "c" ? LIGHTNING_VALUE : 0);
     if (response) item.r = response.slice(0, 80);
     this.items.push(item);
-    if (outcome !== "p") store.recordAttempt(q.id, outcome === "c");
+    if (outcome !== "p") recordProgress(q, outcome === "c");
 
     if (outcome === "c") {
       this.score += LIGHTNING_VALUE;
@@ -905,7 +754,7 @@ class LightningGame extends GameBase {
       if (item.o !== "w") return;
       item.o = "c";
       item.p = LIGHTNING_VALUE;
-      store.amendAttempt(item.q, true);
+      recordProgress(q, true, true);
       this.score += LIGHTNING_VALUE;
       this.r.you.textContent = this.score;
       li.dataset.outcome = "c";

@@ -5,8 +5,47 @@ import { icons } from "../icons.js";
 import { store, msPerWord } from "../store.js";
 import { sound } from "../sound.js";
 import { segmented, toggle, field } from "../ui.js";
+import { esc } from "../dom.js";
+import { speechSupported, englishVoices, speak, speechRate } from "../speech.js";
 
 const wpm = (speed) => Math.round(60000 / msPerWord(speed));
+
+function voiceOptions(selected) {
+  const voices = englishVoices();
+  return [
+    `<option value="">Automatic${voices[0] ? ` (${esc(voices[0].name)})` : ""}</option>`,
+    ...voices.map(
+      (v) => `<option value="${esc(v.name)}" ${v.name === selected ? "selected" : ""}>${esc(v.name)} · ${esc(v.lang)}</option>`,
+    ),
+  ].join("");
+}
+
+function voiceSection(s) {
+  if (!speechSupported) {
+    return field({
+      title: "Moderator voice",
+      hint: "Your browser doesn’t support speech synthesis.",
+      control: toggle({ name: "voice", checked: false, label: "Moderator voice" }),
+    });
+  }
+  return `
+    ${field({
+      title: "Moderator voice",
+      hint: "Read questions aloud as they appear. The voice stops the moment anyone buzzes.",
+      control: toggle({ name: "voice", checked: s.voice, label: "Moderator voice" }),
+    })}
+    ${field({
+      title: "Voice",
+      hint: "Voices come from your device. Speed follows the reading-speed setting.",
+      control: `
+        <div class="voice-picker">
+          <label class="select"><span class="sr-only">Voice</span>
+            <select name="voiceName" data-ref="voiceSelect">${voiceOptions(s.voiceName)}</select>
+          </label>
+          <button type="button" class="btn btn-ghost btn-sm" data-action="test-voice">Test</button>
+        </div>`,
+    })}`;
+}
 
 function render(dialog) {
   const s = store.settings;
@@ -61,6 +100,11 @@ function render(dialog) {
         </section>
 
         <section class="field-group">
+          <h3 class="field-group-title">Moderator voice</h3>
+          ${voiceSection(s)}
+        </section>
+
+        <section class="field-group">
           <h3 class="field-group-title">Sound &amp; display</h3>
           ${field({ title: "Sound effects", hint: "Buzzer, correct and incorrect cues.", control: toggle({ name: "sound", checked: s.sound, label: "Sound effects" }) })}
           ${field({
@@ -107,6 +151,23 @@ export function openSettings() {
   };
   dialog.onclick = (event) => {
     if (event.target === dialog) dialog.close(); // click on the backdrop
+    if (event.target.closest("[data-action=test-voice]")) {
+      speak("This element, with atomic number 79, has the chemical symbol A U. Name this precious metal.", {
+        rate: speechRate(wpm(store.settings.speed)),
+      });
+    }
   };
+  // Voices can load after the dialog opens (Chrome loads them asynchronously).
+  if (speechSupported && !englishVoices().length) {
+    speechSynthesis.addEventListener(
+      "voiceschanged",
+      () => {
+        const select = $("[data-ref=voiceSelect]", dialog);
+        if (select) select.innerHTML = voiceOptions(store.settings.voiceName);
+      },
+      { once: true },
+    );
+  }
+  dialog.addEventListener("close", () => speechSupported && speechSynthesis.cancel(), { once: true });
   dialog.showModal();
 }

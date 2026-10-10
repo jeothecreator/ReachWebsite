@@ -92,14 +92,20 @@ export const counts = {
   topics: TOPICS.length,
 };
 
-const kindForMode = (mode) => (mode === "whoami" ? "whoami" : "snapper");
+const kindForMode = (mode, roomSet) => (mode === "whoami" || (mode === "room" && roomSet === "whoami") ? "whoami" : "snapper");
 
 /**
  * Filter the bank by practice settings.
- * @param {{mode?: string, topics?: string[]|null, diffs?: number[], pool?: string}} opts
+ * @param {{mode?: string, roomSet?: string, topics?: string[]|null, diffs?: number[], pool?: string}} opts
  */
-export function filterQuestions({ mode = "snappers", topics = null, diffs = [1, 2, 3], pool = "all" } = {}) {
-  const kind = kindForMode(mode);
+export function filterQuestions({
+  mode = "snappers",
+  roomSet = "snappers",
+  topics = null,
+  diffs = [1, 2, 3],
+  pool = "all",
+} = {}) {
+  const kind = kindForMode(mode, roomSet);
   const topicSet = topics ? new Set(topics) : null;
   const diffSet = new Set(diffs);
   return QUESTIONS.filter((q) => {
@@ -120,17 +126,32 @@ export function drawQuestions(config) {
 }
 
 /** Count questions per topic for a mode/difficulty selection (ignores the topic filter itself). */
-export function countByTopic({ mode, diffs, pool }) {
+export function countByTopic({ mode, roomSet, diffs, pool }) {
   const result = Object.fromEntries(TOPICS.map((t) => [t.id, 0]));
-  for (const q of filterQuestions({ mode, diffs, pool })) result[q.topic] += 1;
+  for (const q of filterQuestions({ mode, roomSet, diffs, pool })) result[q.topic] += 1;
   return result;
 }
 
-export function countByDifficulty({ mode, topics, pool }) {
+export function countByDifficulty({ mode, roomSet, topics, pool }) {
   const result = { 1: 0, 2: 0, 3: 0 };
-  for (const q of filterQuestions({ mode, topics, pool, diffs: [1, 2, 3] })) result[q.diff] += 1;
+  for (const q of filterQuestions({ mode, roomSet, topics, pool, diffs: [1, 2, 3] })) result[q.diff] += 1;
   return result;
 }
 
 const byId = new Map(QUESTIONS.map((q) => [q.id, q]));
 export const questionById = (id) => byId.get(id);
+
+/** Turn an imported packet into playable questions. They are flagged `custom` so progress isn't tracked. */
+export function packetQuestions(packet) {
+  return packet.questions.map(([text, answer, alts = []], i) => ({
+    id: `pk-${packet.id}-${i + 1}`,
+    kind: "snapper",
+    custom: true,
+    topic: "custom",
+    topicName: packet.name,
+    diff: 0,
+    text: smart(text),
+    answer: smart(answer),
+    alts: alts.map(smart),
+  }));
+}

@@ -5,6 +5,7 @@ import { icons } from "../icons.js";
 import { store } from "../store.js";
 import { answerHTML, answerText } from "../grader.js";
 import { QUESTIONS, TOPICS, GROUPS, DIFFICULTIES, topicById, counts } from "../bank.js";
+import { openPacketDialog, packetsHTML, handlePacketAction } from "./packets.js";
 
 const PAGE = 40;
 
@@ -20,7 +21,11 @@ const view = {
   limit: PAGE,
 };
 
-const fold = (s) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const fold = (s) =>
+  s
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
 const searchIndex = new Map(
   QUESTIONS.map((q) => [q.id, fold(`${q.text} ${answerText(q.answer)} ${q.alts.join(" ")}`)]),
@@ -71,9 +76,14 @@ export function mountBank(root) {
           <div>
             <p class="eyebrow">Question bank</p>
             <h1 class="page-title">${fmt(counts.total)} questions, all original</h1>
-            <p class="page-lede">Search and filter the full bank, study answers, or print a packet for team practice.</p>
+            <p class="page-lede">Search and filter the full bank, study answers, print a packet for team practice, or import your own questions.</p>
+          </div>
+          <div class="page-head-actions">
+            <button class="btn btn-secondary" data-action="import">${icons.upload}<span>Import a packet</span></button>
           </div>
         </header>
+
+        <div data-ref="packets">${packetsHTML()}</div>
 
         <div class="toolbar" role="search">
           <label class="search">
@@ -115,6 +125,7 @@ export function mountBank(root) {
     </section>`;
 
   const listEl = $("[data-ref=list]", root);
+  const renderPackets = () => ($("[data-ref=packets]", root).innerHTML = packetsHTML());
   const countEl = $("[data-ref=count]", root);
   const moreEl = $("[data-ref=more]", root);
 
@@ -190,7 +201,11 @@ export function mountBank(root) {
   root.addEventListener("click", (event) => {
     const btn = event.target.closest("[data-action]");
     if (!btn) return;
+    if (handlePacketAction(btn, renderPackets)) return;
     switch (btn.dataset.action) {
+      case "import":
+        openPacketDialog(renderPackets);
+        break;
       case "toggle": {
         const item = btn.closest(".bank-item");
         const open = item.classList.toggle("is-open");

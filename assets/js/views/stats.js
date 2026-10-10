@@ -163,7 +163,7 @@ export function mountStats(root) {
                     (s) => `
                   <li>
                     <a class="session-link" href="#/results/${s.id}">
-                      <span class="session-mode">${MODE_NAMES[s.mode]}${s.opponent ? ` <span class="muted">vs ${OPPONENTS[s.opponent].name}</span>` : ""}</span>
+                      <span class="session-mode">${s.daily ? "Daily Challenge" : MODE_NAMES[s.mode]}${s.opponent ? ` <span class="muted">vs ${OPPONENTS[s.opponent].name}</span>` : ""}${s.packetName ? ` <span class="muted">· ${esc(s.packetName)}</span>` : ""}</span>
                       <span class="session-date muted">${relativeDay(s.date)}</span>
                       <span class="session-score mono">${s.correct}/${s.total}</span>
                       <span class="session-points mono">${fmt(s.score)} pts</span>

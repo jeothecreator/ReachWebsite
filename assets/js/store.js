@@ -13,6 +13,8 @@ const DEFAULTS = {
     judging: "typed", // "typed" | "self"
     sound: true,
     volume: 0.6,
+    voice: false, // read questions aloud
+    voiceName: "", // "" = best available English voice
   },
   config: {
     mode: "snappers", // "snappers" | "whoami" | "lightning"
@@ -22,10 +24,16 @@ const DEFAULTS = {
     duration: 60,
     opponent: "off",
     pool: "all", // "all" | "unseen" | "missed"
+    roomSet: "snappers", // question type used in the Buzzer Room
+    teams: null, // Buzzer Room teams: [{ name, key }]
   },
   // qid -> [timesSeen, timesCorrect, lastResultWasCorrect (0/1)]
   progress: {},
   history: [],
+  // "YYYY-MM-DD" -> { score, correct, total, marks, avgBuzz, session }
+  daily: {},
+  // Imported question sets: [{ id, name, created, questions: [[text, answer, alts]] }]
+  packets: [],
 };
 
 function clone(value) {
@@ -40,6 +48,8 @@ function load() {
       config: { ...DEFAULTS.config, ...saved.config },
       progress: saved.progress && typeof saved.progress === "object" ? saved.progress : {},
       history: Array.isArray(saved.history) ? saved.history : [],
+      daily: saved.daily && typeof saved.daily === "object" ? saved.daily : {},
+      packets: Array.isArray(saved.packets) ? saved.packets : [],
     };
   } catch {
     return clone(DEFAULTS);
@@ -69,6 +79,12 @@ export const store = {
   },
   get history() {
     return state.history;
+  },
+  get daily() {
+    return state.daily;
+  },
+  get packets() {
+    return state.packets;
   },
 
   updateSettings(patch) {
@@ -111,12 +127,30 @@ export const store = {
     persist();
   },
 
+  /** Keep the first completed attempt at each day's challenge. */
+  recordDaily(key, result) {
+    if (state.daily[key]) return;
+    state.daily[key] = result;
+    persist();
+  },
+
+  savePacket(packet) {
+    state.packets = [packet, ...state.packets.filter((p) => p.id !== packet.id)];
+    persist();
+  },
+
+  deletePacket(id) {
+    state.packets = state.packets.filter((p) => p.id !== id);
+    persist();
+  },
+
   isSeen: (qid) => Boolean(state.progress[qid]),
   isMissed: (qid) => Boolean(state.progress[qid]) && state.progress[qid][2] === 0,
 
   resetProgress() {
     state.progress = {};
     state.history = [];
+    state.daily = {};
     persist();
   },
 };

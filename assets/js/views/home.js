@@ -4,6 +4,9 @@ import { esc, fmt, prefersReducedMotion } from "../dom.js";
 import { icons } from "../icons.js";
 import { TOPICS, GROUPS, QUESTIONS, counts } from "../bank.js";
 import { wordsHTML } from "../reader.js";
+import { store } from "../store.js";
+import { DAILY_SIZE, dayKey, dailyNumber, currentStreak } from "../daily.js";
+import { marksHTML } from "./daily.js";
 
 const DEMO = [
   {
@@ -45,8 +48,8 @@ export function mountHome(root) {
           <p class="eyebrow hero-eyebrow"><span class="eyebrow-dot"></span>Reach for the Top practice</p>
           <h1 class="hero-title">Beat them<br /><em>to the buzzer.</em></h1>
           <p class="hero-lede">
-            ${fmt(rounded)}+ original questions, read to you word by word. Press <kbd>Space</kbd> the moment you know it,
-            type your answer, and learn exactly how early you can buzz.
+            ${fmt(rounded)}+ original questions, read to you word by word — or aloud by a moderator voice. Press
+            <kbd>Space</kbd> the moment you know it, and learn exactly how early you can buzz.
           </p>
           <div class="hero-actions">
             <a class="btn btn-primary btn-lg" href="#/practice">Start practising ${icons.arrowRight}</a>
@@ -56,7 +59,7 @@ export function mountHome(root) {
             <div><dt>Questions</dt><dd>${fmt(counts.total)}</dd></div>
             <div><dt>Topics</dt><dd>${counts.topics}</dd></div>
             <div><dt>Levels</dt><dd>3</dd></div>
-            <div><dt>Formats</dt><dd>3</dd></div>
+            <div><dt>Formats</dt><dd>4</dd></div>
           </dl>
         </div>
 
@@ -81,6 +84,8 @@ export function mountHome(root) {
       </div>
     </section>
 
+    ${dailyBand()}
+
     <section class="section">
       <div class="container">
         <header class="section-head">
@@ -91,6 +96,7 @@ export function mountHome(root) {
           ${formatCard("snappers", icons.bolt, "Snappers", "10 points", "Open toss-ups read aloud word by word. Interrupt with Space when you know it — or wait for the end and buzz before time runs out.", ["Word-by-word reading", "Buzz-point tracking", "Optional rival team"])}
           ${formatCard("whoami", icons.person, "Who Am I?", "40 · 30 · 20 · 10", "Four clues about a person, place or thing, from obscure to obvious. Every clue you wait costs you ten points.", ["Clue-by-clue values", "History, science, arts", "Big swings, big wins"])}
           ${formatCard("lightning", icons.clock, "Lightning Round", "60 seconds", "Rapid-fire questions against the clock. Type and press Enter; leave it blank to pass and keep moving.", ["30 to 120 second rounds", "Instant marking", "Beat your best score"])}
+          ${formatCard("room", icons.users, "Buzzer Room", "2–4 teams", "Run a real match on one laptop or tablet. Every team gets its own buzzer key, and a moderator marks the answers.", ["Team keys or touch pads", "Rebounds after a miss", "Final standings"])}
         </div>
       </div>
     </section>
@@ -103,11 +109,14 @@ export function mountHome(root) {
         </header>
         <div class="feature-grid">
           ${feature(icons.keyboard, "A real buzzer", "Space is your buzzer. Reading stops the instant you press it, and your buzz point is marked in the text.")}
+          ${feature(icons.speaker, "A moderator voice", "Turn on read-aloud and hear every question the way it sounds in a match. The voice stops the moment you buzz.")}
           ${feature(icons.check, "Fair answer checking", "Typos, accents and word order are forgiven. Last names count where a moderator would accept them. You can always overrule.")}
           ${feature(icons.versus, "A rival on the other bench", "Face a Rookie, Contender or Champion team that buzzes in, steals rebounds, and keeps the pressure on.")}
+          ${feature(icons.calendar, "A daily challenge", "Ten new questions every day, the same for everyone. Build a streak and share your score with your team.")}
           ${feature(icons.target, "Know your weak spots", "Accuracy by topic and level, average buzz point, and a one-click round of every question you’ve missed.")}
-          ${feature(icons.person, "Self-marking for teams", "Prefer answering aloud? Switch to self-marking and run practice for a whole team from one screen.")}
+          ${feature(icons.upload, "Bring your own packets", "Paste in questions from your own practice sets and play them with the same buzzer, marking and voice.")}
           ${feature(icons.printer, "Printable packets", "Filter the bank and print a clean packet with answers for a moderator-led practice.")}
+          ${feature(icons.download, "Works offline", "Install Summit on your phone or laptop and practise on the bus, at tournaments, or anywhere without Wi-Fi.")}
         </div>
       </div>
     </section>
@@ -155,6 +164,31 @@ export function mountHome(root) {
     </section>`;
 
   return runDemo(root);
+}
+
+function dailyBand() {
+  const today = dayKey();
+  const result = store.daily[today];
+  const streak = currentStreak(today);
+  return `
+    <section class="daily-band">
+      <div class="container daily-band-inner">
+        <div class="daily-band-copy">
+          <p class="eyebrow">${icons.calendar}Daily Challenge · #${dailyNumber(today)}</p>
+          <h2 class="daily-band-title">${result ? `Today: ${result.correct} of ${result.total}` : `${DAILY_SIZE} new questions, every day.`}</h2>
+          <p class="muted">${
+            result
+              ? "Come back tomorrow for a fresh set."
+              : "The same set for everyone, climbing from Junior to Senior. One attempt counts."
+          }</p>
+        </div>
+        <div class="daily-band-side">
+          ${result ? marksHTML(result.marks) : ""}
+          <span class="streak-pill ${streak ? "is-on" : ""}">${icons.flame}<b>${streak}</b> day streak</span>
+          <a class="btn ${result ? "btn-secondary" : "btn-primary"}" href="#/daily">${result ? "See today’s result" : "Play today’s challenge"} ${icons.arrowRight}</a>
+        </div>
+      </div>
+    </section>`;
 }
 
 function formatCard(mode, icon, title, value, text, bullets) {

@@ -1,31 +1,40 @@
 # Summit — Reach for the Top practice
 
-Summit is a practice site for **Reach for the Top**. Questions are read to you word by word, you press **Space** to buzz, and your answer is marked automatically. It runs entirely in the browser: no accounts, no server, no build step.
+Summit is a practice site for **Reach for the Top**. Questions are read to you word by word (or spoken by a moderator voice), you press **Space** to buzz, and your answer is marked automatically. It runs entirely in the browser: no accounts, no server, no build step. It can be installed on a phone or laptop and works offline.
+
+**Live site:** <https://jeothecreator.github.io/ReachWebsite/>
 
 ## Features
 
-- **1,400+ original questions** across 14 topics: Biology, Chemistry, Physics, Earth & Space, Mathematics, World History, Canada, Geography, Literature, Fine Arts, Mythology & Religion, Language & Words, Technology, and Sports & Games.
+- **2,000+ original questions** across 14 topics: Biology, Chemistry, Physics, Earth & Space, Mathematics, World History, Canada, Geography, Literature, Fine Arts, Mythology & Religion, Language & Words, Technology, and Sports & Games. Senior questions are pyramidal, with the hardest clue first, so the earlier you buzz, the more you know.
 - **Three levels:** Junior, Intermediate and Senior.
-- **Three formats:**
+- **Four formats:**
   - **Snappers:** open toss-ups worth 10 points, read word by word. Buzz in at any point.
   - **Who Am I?:** four clues worth 40, 30, 20 and 10 points, hardest clue first.
   - **Lightning Round:** answer as many questions as you can in 30 to 120 seconds.
+  - **Buzzer Room:** two to four teams share one screen, each with its own buzzer key (or touch pad). A moderator marks answers, and a wrong answer opens the question to the other teams.
+- **Daily Challenge:** ten questions a day, the same for everyone, climbing from Junior to Senior. Build a streak and share your result.
+- **Moderator voice:** questions can be read aloud with your device's built-in voices. The voice stops the instant anyone buzzes.
 - **Space is the buzzer.** Reading stops the moment you buzz, and your buzz point is marked in the question text.
 - **Lenient answer checking.** Small typos, accents, articles and word order don't count against you, and last names count wherever a moderator would accept them. If the marking is wrong, you can overrule it.
 - **Rival opponent.** Play against a Rookie, Contender or Champion team that buzzes in and takes rebounds.
-- **Self-marking mode.** Players answer out loud and mark themselves, so a whole team can practise from one screen.
-- **Stats.** Accuracy by topic and level, average buzz point, recent sessions, and a one-click round of every question you've missed.
+- **Self-marking mode.** Players answer out loud and mark themselves.
+- **Your own packets.** Paste in questions from your own practice sets (`Question | Answer | alternates`, or rows copied from a spreadsheet) and play them as Snappers or a Lightning Round.
+- **Stats.** Accuracy by topic and level, average buzz point, a buzz-point chart for every round, recent sessions, and a one-click round of every question you've missed.
 - **Question bank.** Search and filter every question, reveal answers, and print a clean packet for a moderator-led practice.
-- Light and dark themes, synthesized sound effects, and layouts that work on phones.
+- Light and dark themes, synthesized sound effects, layouts that work on phones, and offline support.
 
 ## Keyboard shortcuts
+
+Press `?` anywhere in the app to see these.
 
 | Key          | Action                                                  |
 | ------------ | ------------------------------------------------------- |
 | `Space`      | Buzz in (and go to the next question)                   |
 | `Enter`      | Submit an answer, reveal it, or go to the next question |
-| `Y` / `N`    | Mark yourself right or wrong (self-marking)             |
+| `Y` / `N`    | Mark an answer right or wrong (self-marking, Buzzer Room moderator) |
 | `P` or `Esc` | Pause or resume                                         |
+| `A` `L` `Z` `M` | Default team buzzers in the Buzzer Room (changeable in setup) |
 
 ## Running it locally
 
@@ -43,21 +52,26 @@ Then open <http://localhost:8080>.
 
 The site is plain static files, so any static host works.
 
-- **GitHub Pages:** in the repository go to _Settings → Pages_ and deploy from the branch root.
+- **GitHub Pages:** in the repository go to _Settings → Pages_ and deploy from the branch root. Every push redeploys automatically.
 - **Netlify, Vercel or Cloudflare Pages:** leave the build command empty and set the publish directory to `/`.
+
+The service worker (`sw.js`) fetches fresh files whenever the device is online and falls back to its cache offline, so new deployments show up on the next visit.
 
 ## Project structure
 
 ```
-index.html                 App shell (header, footer, settings dialog)
+index.html                 App shell (header, footer, dialogs, meta tags)
+sw.js, manifest.webmanifest  Offline support and installability
 assets/css/main.css        Design tokens, components, light/dark themes, print styles
-assets/js/app.js           Router and theme handling
-assets/js/bank.js          Loads the question files and filters them
+assets/js/app.js           Router, theme handling, service-worker registration
+assets/js/bank.js          Loads the question files, filters them, converts imported packets
 assets/js/grader.js        Answer checking
-assets/js/reader.js        Word-by-word question reader
+assets/js/reader.js        Word-by-word reader, synchronised with the moderator voice
+assets/js/speech.js        Web Speech API wrapper (voices, rate, word boundaries)
+assets/js/daily.js         Daily Challenge selection, streaks and share text
 assets/js/opponent.js      Simulated rival team
-assets/js/store.js         Settings, progress and history (localStorage)
-assets/js/views/           Home, setup, play, results, bank, stats and settings screens
+assets/js/store.js         Settings, progress, history, daily results and packets (localStorage)
+assets/js/views/           Screens: home, setup, play, room (Buzzer Room), results, daily, bank, packets, stats, settings
 data/questions/*.js        The question bank, one file per topic
 tools/validate.mjs         Checks every question and confirms its answer grades correctly
 tools/grader.test.mjs      Unit tests for answer checking

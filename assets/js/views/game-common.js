@@ -106,6 +106,7 @@ export class GameBase {
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onVisibility = () => document.hidden && this.pause();
     this.onPageHide = () => this.persist();
+    this.onDialog = () => this.pause(); // settings or shortcuts opened over the game
     this.onClick = this.onClick.bind(this);
   }
 
@@ -126,6 +127,7 @@ export class GameBase {
     document.addEventListener("keydown", this.onKeyDown);
     document.addEventListener("visibilitychange", this.onVisibility);
     window.addEventListener("pagehide", this.onPageHide);
+    window.addEventListener("summit:dialog", this.onDialog);
     this.root.addEventListener("click", this.onClick);
   }
 
@@ -151,6 +153,9 @@ export class GameBase {
       return;
     }
     if (isTyping(event)) return;
+    // Let a focused button or link (reached with Tab) activate normally.
+    const control = event.target instanceof Element && event.target.closest("button, a[href]");
+    if ((event.key === "Enter" || event.key === " ") && control && control.getClientRects().length) return;
     sound.unlock();
     this.key(event);
   }
@@ -159,6 +164,7 @@ export class GameBase {
     this.r.pause.hidden = !show;
     this.root.querySelector(".play").classList.toggle("is-paused", show);
     if (show) this.r.pause.querySelector("[data-action=resume]").focus();
+    else if (this.r.pause.contains(document.activeElement)) document.activeElement.blur(); // so Space buzzes again
   }
 
   /** Save whatever has been played so far (once). */
@@ -171,7 +177,7 @@ export class GameBase {
       score: this.score,
       oppScore: this.oppScore ?? null,
       duration: this.config.mode === "lightning" ? this.config.duration : null,
-      complete: this.items.length >= this.questions.length,
+      planned: this.questions.length,
     });
   }
 
@@ -187,6 +193,7 @@ export class GameBase {
     document.removeEventListener("keydown", this.onKeyDown);
     document.removeEventListener("visibilitychange", this.onVisibility);
     window.removeEventListener("pagehide", this.onPageHide);
+    window.removeEventListener("summit:dialog", this.onDialog);
     this.root.removeEventListener("click", this.onClick);
   }
 

@@ -101,6 +101,17 @@ export class RoomGame extends GameBase {
       </section>`;
     this.r = refs(this.root);
     this.bind();
+    // Pads buzz the moment a finger lands. Waiting for click would favour whoever lifts first,
+    // and two overlapping touches would produce no click at all.
+    this.padPointerAt = -Infinity;
+    this.r.pads.addEventListener("pointerdown", (event) => {
+      const pad = event.target.closest(".team-pad");
+      if (!pad || pad.disabled || event.button > 0) return;
+      event.preventDefault();
+      this.padPointerAt = performance.now();
+      sound.unlock();
+      this.teamBuzz(Number(pad.dataset.team));
+    });
     this.nextQuestion();
   }
 
@@ -345,7 +356,8 @@ export class RoomGame extends GameBase {
     const ranked = [...this.teams].sort((a, b) => b.score - a.score);
     const top = ranked[0].score;
     const winners = ranked.filter((t) => t.score === top);
-    const headline = top === 0 ? "No points this time." : winners.length > 1 ? "It's a tie!" : `${winners[0].name} wins!`;
+    const headline =
+      top === 0 ? "No points this time." : winners.length > 1 ? "It's a tie!" : `${winners[0].name} wins!`;
 
     this.r.card.dataset.outcome = "";
     this.r.card.dataset.team = winners.length === 1 && top > 0 ? String(winners[0].index) : "";
@@ -410,6 +422,8 @@ export class RoomGame extends GameBase {
   action(name, btn) {
     switch (name) {
       case "team-buzz":
+        // Pointer presses were handled on pointerdown; this covers keyboard and assistive-tech clicks.
+        if (performance.now() - this.padPointerAt < 1000) return;
         return this.teamBuzz(Number(btn.dataset.team));
       case "peek":
         return btn.classList.toggle("is-revealed");

@@ -184,7 +184,7 @@ export function mountSetup(root, { query }) {
             <label class="sr-only" for="team-name-${i}">Team ${i + 1} name</label>
             <input class="text-input" id="team-name-${i}" name="team-name" data-index="${i}" maxlength="20" value="${esc(t.name)}" autocomplete="off" />
             <label class="key-input-label" for="team-key-${i}">Key</label>
-            <input class="text-input key-input" id="team-key-${i}" name="team-key" data-index="${i}" maxlength="1" value="${esc(t.key.toUpperCase())}" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+            <input class="text-input key-input" id="team-key-${i}" name="team-key" data-index="${i}" maxlength="2" value="${esc(t.key.toUpperCase())}" autocomplete="off" autocapitalize="characters" spellcheck="false" />
           </div>`,
           )
           .join("")}
@@ -421,6 +421,11 @@ export function mountSetup(root, { query }) {
   }
 
   // Team names and keys update as you type, without re-rendering the inputs.
+  // Typing into a key field replaces its key rather than being blocked by the old one.
+  form.addEventListener("focusin", (event) => {
+    if (event.target.name === "team-key") event.target.select();
+  });
+
   form.addEventListener("input", (event) => {
     const el = event.target;
     const i = Number(el.dataset.index);
@@ -474,7 +479,8 @@ export function mountSetup(root, { query }) {
         const n = Number(el.value);
         const used = new Set(cfg.teams.map((t) => t.key));
         while (cfg.teams.length < n) {
-          const next = DEFAULT_TEAMS.find((t, i) => i >= cfg.teams.length && !used.has(t.key)) ??
+          const next =
+            DEFAULT_TEAMS.find((t, i) => i >= cfg.teams.length && !used.has(t.key)) ??
             DEFAULT_TEAMS.find((t) => !used.has(t.key));
           cfg.teams.push({ ...next });
           used.add(next.key);

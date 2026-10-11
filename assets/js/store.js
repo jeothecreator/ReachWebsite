@@ -1,7 +1,9 @@
 // Persistent state (settings, last practice setup, per-question progress, session history).
-// Everything lives in one localStorage entry so it is easy to export or reset.
+// Everything lives in one localStorage entry so it is easy to export or reset. Imported packets
+// get their own entry, so a large packet can never crowd out progress.
 
 const KEY = "summit:v1";
+const PACKETS_KEY = "summit:packets";
 const MAX_HISTORY = 150;
 
 const DEFAULTS = {
@@ -40,6 +42,16 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function loadPackets(legacy) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(PACKETS_KEY) ?? "null");
+    if (Array.isArray(saved)) return saved;
+  } catch {
+    // fall through to packets saved by older versions inside the main entry
+  }
+  return Array.isArray(legacy) ? legacy : [];
+}
+
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
@@ -49,21 +61,38 @@ function load() {
       progress: saved.progress && typeof saved.progress === "object" ? saved.progress : {},
       history: Array.isArray(saved.history) ? saved.history : [],
       daily: saved.daily && typeof saved.daily === "object" ? saved.daily : {},
-      packets: Array.isArray(saved.packets) ? saved.packets : [],
+      packets: loadPackets(saved.packets),
     };
   } catch {
-    return clone(DEFAULTS);
+    return { ...clone(DEFAULTS), packets: loadPackets() };
   }
 }
 
 const state = load();
 const listeners = new Set();
 
+// Move packets saved by older versions (inside the main entry) to their own entry.
+try {
+  if (state.packets.length && localStorage.getItem(PACKETS_KEY) === null && persistPackets()) persist();
+} catch {
+  // storage disabled
+}
+
 function persist() {
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
+    localStorage.setItem(KEY, JSON.stringify({ ...state, packets: undefined }));
   } catch {
     // Storage can be full or disabled (private browsing); the app still works for this visit.
+  }
+}
+
+/** Returns false if the browser refused to store the packets (usually because storage is full). */
+function persistPackets() {
+  try {
+    localStorage.setItem(PACKETS_KEY, JSON.stringify(state.packets));
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -134,14 +163,18 @@ export const store = {
     persist();
   },
 
+  /** Save a packet; returns false (and keeps nothing) if it doesn't fit in storage. */
   savePacket(packet) {
-    state.packets = [packet, ...state.packets.filter((p) => p.id !== packet.id)];
-    persist();
+    const previous = state.packets;
+    state.packets = [packet, ...previous.filter((p) => p.id !== packet.id)];
+    if (persistPackets()) return true;
+    state.packets = previous;
+    return false;
   },
 
   deletePacket(id) {
     state.packets = state.packets.filter((p) => p.id !== id);
-    persist();
+    persistPackets();
   },
 
   isSeen: (qid) => Boolean(state.progress[qid]),

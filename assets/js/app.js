@@ -81,18 +81,24 @@ $('[data-action="toggle-theme"]').addEventListener("click", () => {
   store.updateSettings({ theme: dark ? "light" : "dark" });
 });
 
+/** Open a dialog, first telling any game in progress to pause behind it. */
+const overGame = (open) => () => {
+  window.dispatchEvent(new Event("summit:dialog"));
+  open();
+};
+
 const settingsBtn = $('[data-action="open-settings"]');
 settingsBtn.innerHTML = icons.settings;
-settingsBtn.addEventListener("click", openSettings);
+settingsBtn.addEventListener("click", overGame(openSettings));
 
 // "?" shows the keyboard shortcuts anywhere outside a text field.
 document.addEventListener("keydown", (event) => {
   if (event.key === "?" && !isTyping(event) && !document.querySelector("dialog[open]")) {
     event.preventDefault();
-    openShortcuts();
+    overGame(openShortcuts)();
   }
 });
-$('[data-action="open-shortcuts"]')?.addEventListener("click", openShortcuts);
+$('[data-action="open-shortcuts"]')?.addEventListener("click", overGame(openShortcuts));
 
 // Offline support and installability (only on a real origin, not file://).
 if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {

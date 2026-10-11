@@ -2,7 +2,14 @@
 // fallback so the app keeps working offline after one visit.
 
 const CACHE = "summit-v2";
-const CORE = ["./", "index.html", "assets/css/main.css", "assets/js/app.js", "assets/favicon.svg", "manifest.webmanifest"];
+const CORE = [
+  "./",
+  "index.html",
+  "assets/css/main.css",
+  "assets/js/app.js",
+  "assets/favicon.svg",
+  "manifest.webmanifest",
+];
 const FONT_HOSTS = new Set(["fonts.googleapis.com", "fonts.gstatic.com"]);
 
 self.addEventListener("install", (event) => {
@@ -30,7 +37,13 @@ self.addEventListener("message", (event) => {
     caches.open(CACHE).then((cache) =>
       Promise.all(
         event.data.urls.map((url) =>
-          cache.match(url).then((hit) => hit || fetch(url).then((res) => res.ok && cache.put(url, res)).catch(() => {})),
+          cache.match(url).then(
+            (hit) =>
+              hit ||
+              fetch(url)
+                .then((res) => res.ok && cache.put(url, res))
+                .catch(() => {}),
+          ),
         ),
       ),
     ),

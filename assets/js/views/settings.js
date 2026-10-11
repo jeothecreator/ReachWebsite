@@ -15,7 +15,8 @@ function voiceOptions(selected) {
   return [
     `<option value="">Automatic${voices[0] ? ` (${esc(voices[0].name)})` : ""}</option>`,
     ...voices.map(
-      (v) => `<option value="${esc(v.name)}" ${v.name === selected ? "selected" : ""}>${esc(v.name)} · ${esc(v.lang)}</option>`,
+      (v) =>
+        `<option value="${esc(v.name)}" ${v.name === selected ? "selected" : ""}>${esc(v.name)} · ${esc(v.lang)}</option>`,
     ),
   ].join("");
 }

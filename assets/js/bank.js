@@ -92,7 +92,8 @@ export const counts = {
   topics: TOPICS.length,
 };
 
-const kindForMode = (mode, roomSet) => (mode === "whoami" || (mode === "room" && roomSet === "whoami") ? "whoami" : "snapper");
+const kindForMode = (mode, roomSet) =>
+  mode === "whoami" || (mode === "room" && roomSet === "whoami") ? "whoami" : "snapper";
 
 /**
  * Filter the bank by practice settings.

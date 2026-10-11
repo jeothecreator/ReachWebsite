@@ -130,25 +130,34 @@ export function mountDaily(root) {
       </div>
     </section>`;
 
+  // Swap in the new challenge at midnight, whether or not today's has been played.
   const countdown = root.querySelector("[data-ref=countdown]");
-  const tick = countdown
-    ? setInterval(() => {
-        countdown.textContent = countdownText();
-        if (dayKey() !== today) location.reload();
-      }, 1000)
-    : null;
+  const tick = setInterval(() => {
+    if (dayKey() !== today) return location.reload();
+    if (countdown) countdown.textContent = countdownText();
+  }, 1000);
 
   root.addEventListener("click", async (event) => {
     const action = event.target.closest("[data-action]")?.dataset.action;
     if (action === "start") {
+      if (dayKey() !== today) return location.reload();
       beginSession(
-        { mode: "snappers", daily: today, count: DAILY_SIZE, topics: null, diffs: [1, 2, 3], opponent: "off", pool: "all" },
+        {
+          mode: "snappers",
+          daily: today,
+          count: DAILY_SIZE,
+          topics: null,
+          diffs: [1, 2, 3],
+          opponent: "off",
+          pool: "all",
+        },
         dailyQuestions(today),
       );
     } else if (action === "share") {
       const outcome = await shareResult(shareText(today, result));
       const toast = root.querySelector("[data-ref=toast]");
-      toast.textContent = outcome === "copied" ? "Copied to your clipboard." : outcome === "shared" ? "" : "Couldn’t share.";
+      toast.textContent =
+        outcome === "copied" ? "Copied to your clipboard." : outcome === "shared" ? "" : "Couldn’t share.";
     }
   });
 

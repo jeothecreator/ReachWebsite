@@ -19,7 +19,15 @@ function resolveQuestion(item, record) {
   const q = questionById(item.q);
   if (q) return q;
   if (!item.t) return null;
-  return { kind: "snapper", text: item.t, answer: item.a, alts: [], topic: "custom", topicName: record.packetName, diff: 0 };
+  return {
+    kind: "snapper",
+    text: item.t,
+    answer: item.a,
+    alts: [],
+    topic: "custom",
+    topicName: record.packetName,
+    diff: 0,
+  };
 }
 
 export function mountResults(root, { params }) {
@@ -42,7 +50,9 @@ export function mountResults(root, { params }) {
   const opp = record.opponent ? OPPONENTS[record.opponent] : null;
   const missed = record.items.filter((it) => it.o !== "c");
   const passes = record.items.filter((it) => it.o === "p").length;
-  const daily = record.daily ? store.daily[record.daily] : null;
+  // Only the attempt that set the day's result gets its marks and share button.
+  const dailyEntry = record.daily ? store.daily[record.daily] : null;
+  const daily = dailyEntry?.session === record.id ? dailyEntry : null;
 
   let headline = `${fmt(record.score)} points`;
   let subline = `${record.correct} of ${record.total} correct`;
@@ -53,7 +63,7 @@ export function mountResults(root, { params }) {
   } else if (lightning) {
     subline = `${record.correct} correct in ${record.duration} seconds`;
   } else if (record.daily) {
-    headline = `${record.correct} out of ${record.total}`;
+    headline = `${record.correct} out of ${daily?.total ?? record.total}`;
     subline = `${fmt(record.score)} points on Daily Challenge #${dailyNumber(record.daily)}`;
   }
 
@@ -160,12 +170,18 @@ export function mountResults(root, { params }) {
         beginSession(configFromRecord(record));
       }
     } else if (action === "missed") {
-      const config = { ...configFromRecord(record), mode: record.mode === "whoami" ? "whoami" : "snappers", pool: "missed" };
+      const config = {
+        ...configFromRecord(record),
+        mode: record.mode === "whoami" ? "whoami" : "snappers",
+        pool: "missed",
+      };
       if (!beginSession(config)) location.hash = "#/practice";
     } else if (action === "share" && daily) {
       const outcome = await shareResult(shareText(record.daily, daily));
       const toast = root.querySelector("[data-ref=toast]");
-      if (toast) toast.textContent = outcome === "copied" ? "Copied to your clipboard." : outcome === "failed" ? "Couldn’t share." : "";
+      if (toast)
+        toast.textContent =
+          outcome === "copied" ? "Copied to your clipboard." : outcome === "failed" ? "Couldn’t share." : "";
     }
   });
 }

@@ -25,7 +25,9 @@ export function beginSession(config, questions = drawQuestions(config)) {
   if (!questions.length) return false;
   primeSpeech(); // games always start from a click, which lets iOS speak later
   pending = { config: { ...config }, questions };
-  location.hash = "#/play";
+  // From a finished game ("Play again") the hash is already #/play, so assigning it wouldn't remount.
+  if (location.hash === "#/play") window.dispatchEvent(new HashChangeEvent("hashchange"));
+  else location.hash = "#/play";
   return true;
 }
 
@@ -51,7 +53,7 @@ export function clearPendingSession() {
 }
 
 /** Persist a finished (or abandoned) session and return its record. */
-export function saveSession({ config, items, score, oppScore = null, duration = null, complete = true }) {
+export function saveSession({ config, items, score, oppScore = null, duration = null, planned = items.length }) {
   const attempted = items.filter((it) => it.o === "c" || it.o === "w").length;
   const buzzes = items.filter((it) => it.b != null);
   const record = {
@@ -79,13 +81,18 @@ export function saveSession({ config, items, score, oppScore = null, duration = 
   }
   store.saveSession(record);
 
-  if (config.daily && complete) {
+  // The first attempt at a daily counts, even an abandoned one: unplayed questions count as no buzz.
+  if (config.daily) {
+    const marks = items
+      .map((it) => it.o)
+      .join("")
+      .padEnd(planned, "n");
     store.recordDaily(config.daily, {
       score,
       correct: record.correct,
-      total: record.total,
+      total: marks.length,
       avgBuzz: record.avgBuzz,
-      marks: items.map((it) => it.o).join(""),
+      marks,
       session: record.id,
     });
   }

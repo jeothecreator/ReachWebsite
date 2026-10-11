@@ -21,7 +21,7 @@ function aggregate() {
   let matches = 0;
 
   for (const s of history) {
-    if (s.mode === "lightning") bestLightning = Math.max(bestLightning ?? 0, s.score);
+    if (s.mode === "lightning" && !s.packet) bestLightning = Math.max(bestLightning ?? 0, s.score);
     if (s.opponent) {
       matches += 1;
       if (s.score > s.oppScore) wins += 1;
@@ -187,9 +187,12 @@ export function mountStats(root) {
     const btn = event.target.closest("[data-action]");
     if (!btn) return;
     if (btn.dataset.action === "missed") {
+      // Missed questions are replayed solo, whatever format was set up last.
+      const { mode, roomSet } = store.config;
+      const solo = mode === "whoami" || (mode === "room" && roomSet === "whoami") ? "whoami" : "snappers";
       beginSession({
         ...store.config,
-        mode: store.config.mode === "lightning" ? "snappers" : store.config.mode,
+        mode: solo,
         topics: null,
         diffs: [1, 2, 3],
         pool: "missed",

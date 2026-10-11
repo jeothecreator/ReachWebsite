@@ -104,17 +104,23 @@ export function openPacketDialog(onSaved) {
   };
   form.addEventListener("input", update);
 
-  dialog.onclose = () => {
-    if (dialog.returnValue !== "save" || !parsed.questions.length) return;
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!parsed.questions.length) return;
     const packet = {
       id: Date.now().toString(36),
       name: form.name.value.trim().slice(0, 60),
       created: Date.now(),
       questions: parsed.questions,
     };
-    store.savePacket(packet);
+    if (!store.savePacket(packet)) {
+      preview.textContent =
+        "This browser’s storage is full. Delete a saved packet or shorten this one, then try again.";
+      return;
+    }
+    dialog.close("save");
     onSaved?.(packet);
-  };
+  });
   dialog.onclick = (event) => {
     if (event.target === dialog || event.target.closest("[data-close]")) dialog.close("cancel");
   };

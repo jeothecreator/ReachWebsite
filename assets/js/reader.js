@@ -125,7 +125,13 @@ export class Reader {
       onBoundary: (charIndex) => {
         if (generation !== this.generation || !this.running || timing === "timer") return;
         timing = "boundary";
+        // If the engine stalls without ending, carry on with timed reveal so the question still finishes.
         clearTimeout(this.guard);
+        this.guard = setTimeout(() => {
+          if (generation !== this.generation || !this.running || timing !== "boundary") return;
+          timing = "timer";
+          this.schedule(0);
+        }, 5000);
         let k = 0;
         while (k + 1 < starts.length && starts[k + 1] <= charIndex) k += 1;
         const target = Math.min(from + k + 1, this.words.length);

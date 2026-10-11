@@ -79,6 +79,23 @@ test("multi-part answers need every part", () => {
   rejects("ontario and quebec", four);
 });
 
+test("different numerals and directions are not typos", () => {
+  rejects("Elizabeth II", "[Elizabeth] I");
+  accepts("Elizabeth I", "[Elizabeth] I");
+  accepts("Elizabeth", "[Elizabeth] I");
+  rejects("Louis XV", "Louis XIV");
+  accepts("louis xiv", "Louis XIV");
+  rejects("Henry VII", "Henry [VIII]");
+  accepts("Henry VIII", "Henry [VIII]");
+  rejects("Northeast Passage", "[Northwest] Passage");
+  accepts("Northwest Passage", "[Northwest] Passage");
+  accepts("Nortwest Passage", "[Northwest] Passage");
+  accepts("northwestpassage", "[Northwest] Passage");
+  rejects("World War 1", "World War [2]", ["Second World War"]);
+  accepts("world war 2", "World War [2]", ["Second World War"]);
+  accepts("Pope John Paul II", "Pope John Paul [II]");
+});
+
 test("empty and nonsense input", () => {
   rejects("", "Ottawa");
   rejects("the", "The [Sun]");

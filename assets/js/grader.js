@@ -129,6 +129,13 @@ function levenshtein(a, b) {
   return prev[b.length];
 }
 
+// Words where one letter changes the meaning: regnal numerals (Henry VII / VIII), compass
+// directions (Northwest / Northeast) and anything with a digit (World War 1 / 2).
+const ROMAN = /^(?=[ivxlc]+$)c{0,3}(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$/;
+const COMPASS = /^(north|south|east|west|northeast|northwest|southeast|southwest)$/;
+const distinct = (w) => ROMAN.test(w) || COMPASS.test(w) || /\d/.test(w);
+const distinctKey = (words) => words.filter(distinct).sort().join(" ");
+
 /** Typo-tolerant equality. Short words must match exactly; longer ones allow 1–2 edits. */
 function close(a, b) {
   if (a === b) return true;
@@ -137,6 +144,24 @@ function close(a, b) {
   const len = Math.min(a.length, b.length);
   const tolerance = len <= 4 ? 0 : len <= 8 ? 1 : 2;
   return tolerance > 0 && Math.abs(a.length - b.length) <= tolerance && levenshtein(a, b) <= tolerance;
+}
+
+/** Word comparison: two different numerals or directions never count as a typo of each other. */
+function closeWord(a, b) {
+  if (a !== b && distinct(a) && distinct(b)) return false;
+  return close(a, b);
+}
+
+/** Whole-phrase comparison, unless the phrases hold different numerals or directions. */
+function closePhrase(input, target) {
+  if (!target.length) return false;
+  const a = input.join(" ");
+  const b = target.join(" ");
+  if (a.replace(/ /g, "") === b.replace(/ /g, "")) return true;
+  const ka = distinctKey(input);
+  const kb = distinctKey(target);
+  if (ka && kb && ka !== kb) return false;
+  return close(a, b);
 }
 
 function matchesSpec(inputWords, spec) {
@@ -151,18 +176,17 @@ function matchesSpec(inputWords, spec) {
   if (!meaningful.length) return false;
 
   // Whole-phrase comparison catches run-together words and multi-word typos.
-  const joinedInput = meaningful.join(" ");
-  const fullMeaningful = full.filter((w) => !STOPWORDS.has(w)).join(" ");
-  if (close(joinedInput, fullMeaningful) || close(joinedInput, required.join(" "))) return true;
+  const fullMeaningful = full.filter((w) => !STOPWORDS.has(w));
+  if (closePhrase(meaningful, fullMeaningful) || closePhrase(meaningful, required)) return true;
 
   // Word-level: every word typed must belong to the answer, and every required word must be present.
   const available = full.slice();
   for (const word of meaningful) {
-    const idx = available.findIndex((w) => close(word, w));
+    const idx = available.findIndex((w) => closeWord(word, w));
     if (idx === -1) return false;
     available.splice(idx, 1);
   }
-  return required.every((req) => meaningful.some((w) => close(w, req)));
+  return required.every((req) => meaningful.some((w) => closeWord(w, req)));
 }
 
 /** Check a typed response against a question's answer and accepted alternates. */

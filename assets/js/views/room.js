@@ -56,7 +56,7 @@ export class RoomGame extends GameBase {
         <div class="container play-inner">
           <div class="play-bar">
             <div class="play-bar-left">
-              <span class="eyebrow">Buzzer Room · ${this.whoami ? "Who Am I?" : "Snappers"}</span>
+              <h1 class="eyebrow">Buzzer Room · ${this.whoami ? "Who Am I?" : "Snappers"}</h1>
               <span class="play-count"><span data-ref="num">1</span><span class="muted"> / ${this.questions.length}</span></span>
             </div>
             <div class="play-bar-right">

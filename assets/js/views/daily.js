@@ -85,7 +85,7 @@ export function mountDaily(root) {
             }
           </div>
 
-          <aside class="daily-side">
+          <div class="daily-side">
             <div class="stat-row stat-row-3">
               <div class="stat-tile">
                 <span class="stat-label">Current streak</span>
@@ -125,7 +125,7 @@ export function mountDaily(root) {
                   .join("")}
               </ol>
             </div>
-          </aside>
+          </div>
         </div>
       </div>
     </section>`;

@@ -62,8 +62,10 @@ self.addEventListener("fetch", (event) => {
         (hit) =>
           hit ||
           fetch(request).then((res) => {
-            const copy = res.clone();
-            caches.open(CACHE).then((cache) => cache.put(request, copy));
+            if (res.ok || res.type === "opaque") {
+              const copy = res.clone();
+              caches.open(CACHE).then((cache) => cache.put(request, copy));
+            }
             return res;
           }),
       ),

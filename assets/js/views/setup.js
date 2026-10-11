@@ -112,9 +112,9 @@ export function mountSetup(root, { query }) {
             </fieldset>
           </form>
 
-          <aside class="setup-summary" aria-live="polite">
+          <div class="setup-summary" aria-live="polite">
             <div class="summary-card" data-ref="summary"></div>
-          </aside>
+          </div>
         </div>
       </div>
     </section>`;

@@ -31,12 +31,12 @@
   --border-strong: #d3cfc5;
   --text: #16161a;
   --text-2: #55555e;
-  --text-3: #85858f;
+  --text-3: #6b6b74;
   --grid-line: rgba(22, 22, 26, 0.05);
 
   --accent: #f0a92b;
   --accent-hover: #e39c1c;
-  --accent-strong: #a96a00;
+  --accent-strong: #9a6000;
   --accent-soft: rgba(240, 169, 43, 0.16);
   --accent-ink: #1d1404;
 
@@ -72,7 +72,7 @@
   --border-strong: #34343c;
   --text: #ededef;
   --text-2: #a2a2ac;
-  --text-3: #6d6d77;
+  --text-3: #85858f;
   --grid-line: rgba(255, 255, 255, 0.035);
 
   --accent: #f5b83d;
@@ -1397,6 +1397,10 @@ body[data-route="play"] .site-footer {
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-3);
+}
+
+.chip input:checked + .chip-face .chip-count {
+  color: var(--text-2);
 }
 
 .chip input:checked + .chip-face {

@@ -63,7 +63,7 @@ class TossupGame extends GameBase {
         <div class="container play-inner">
           <div class="play-bar">
             <div class="play-bar-left">
-              <span class="eyebrow">${MODE_NAMES[this.config.mode]}</span>
+              <h1 class="eyebrow">${MODE_NAMES[this.config.mode]}</h1>
               <span class="play-count"><span data-ref="num">1</span><span class="muted"> / ${this.questions.length}</span></span>
             </div>
             <div class="scoreboard">
@@ -589,7 +589,7 @@ class LightningGame extends GameBase {
         <div class="container play-inner">
           <div class="play-bar">
             <div class="play-bar-left">
-              <span class="eyebrow">Lightning Round</span>
+              <h1 class="eyebrow">Lightning Round</h1>
               <span class="play-count">Question <span data-ref="num">1</span></span>
             </div>
             <div class="lightning-clock" data-ref="clock" role="timer" aria-label="Time remaining">${clockText(this.duration)}</div>
